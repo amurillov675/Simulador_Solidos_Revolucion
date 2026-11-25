@@ -21,4 +21,4 @@ Aplicación web interactiva desarrollada en Python para el modelado 3D, análisi
 ## 🚀 Instalación y Ejecución Local
 1. Clonar el repositorio:
    ```bash
-   git clone <URL_DE_TU_REPOSITORIO>
+   git clone <https://github.com/amurillov675/Simulador_Solidos_Revolucion.git>
