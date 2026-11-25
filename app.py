@@ -226,39 +226,93 @@ try:
         st.plotly_chart(fig3d, use_container_width=True)
 
     # --- PESTAÑA 2: DESARROLLO ANALÍTICO PASO A PASO ---
+   # --- PESTAÑA 2: DESARROLLO ANALÍTICO PASO A PASO ---
     with tab_analisis:
-        st.subheader("Resolución Analítica Detallada")
-        
+        st.subheader("Resolución Analítica Detallada Paso a Paso")
+
+        # Cálculo de componentes comunes para la evaluación
+        val_b = sp.simplify(antiderivada.subs(x, b_sym))
+        val_a = sp.simplify(antiderivada.subs(x, a_sym))
+
+        # Desglose de antiderivada término a término
+        terminos_integrando = sp.Add.make_args(sp.expand(integrando_sym))
+        pasos_antiderivada = [sp.integrate(t, x) for t in terminos_integrando]
+        antiderivada_desglosada = sp.Add(*pasos_antiderivada)
+
         if "Discos" in caso:
-            st.markdown("**1. Fórmula General (Método de Discos):**")
-            st.latex(r"V = \pi \int_{a}^{b} [f(x)]^2 \, dx")
-            st.markdown("**2. Sustitución de la función y límites de integración:**")
+            st.markdown("### 1. Identificación del Método y Fórmula General")
+            st.write("Al rotar una región plana continua directamente sobre el eje X sin dejar cavidades internas, cada sección transversal perpendicular al eje de giro forma un disco sólido de radio $R(x) = f(x)$ y espesor diferencial $dx$.")
+            st.latex(r"V = \pi \int_{a}^{b} [R(x)]^2 \, dx = \pi \int_{a}^{b} [f(x)]^2 \, dx")
+
+            st.markdown("### 2. Determinación de los Límites de Integración")
+            if expr_f.strip() == "sqrt(x)" and np.isclose(a, 0.0) and np.isclose(b, 4.0):
+                st.write("Para determinar el inicio y fin de la micro-lente sobre el eje X ($y = 0$):")
+                st.latex(r"\text{Límite inferior } (a): \quad \sqrt{x} = 0 \implies x = 0^2 \implies a = 0")
+                st.latex(r"\text{Límite superior } (b): \quad \text{Longitud axial de diseño} \implies b = 4")
+                st.latex(r"\text{Intervalo de integración: } x \in [0, 4]")
+            else:
+                st.latex(r"\text{Intervalo definido en el modelo: } x \in [" + sp.latex(a_sym) + r", " + sp.latex(b_sym) + r"]")
+
+            st.markdown("### 3. Planteamiento de la Integral y Simplificación Algebraica")
+            st.write("Sustituimos la función perfil $f(x) = " + sp.latex(f_sym) + "$ y los límites en la fórmula de discos:")
             st.latex(r"V = \int_{" + sp.latex(a_sym) + r"}^{" + sp.latex(b_sym) + r"} " + expr_sin_simp + r" \, dx")
-            st.markdown("**3. Simplificación del integrando:**")
+            st.write("Simplificamos la potencia del integrando:")
             st.latex(r"V = \int_{" + sp.latex(a_sym) + r"}^{" + sp.latex(b_sym) + r"} " + sp.latex(integrando_sym) + r" \, dx")
-            
+
         elif "Arandelas" in caso:
-            st.markdown("**1. Fórmula General (Método de Arandelas con eje desplazado):**")
+            st.markdown("### 1. Identificación del Método y Fórmula General (Eje Desplazado)")
+            st.write(f"La región está acotada entre dos curvas y gira alrededor del eje horizontal desplazado $y = {sp.latex(eje_sym)}$. Cada rebanada perpendicular genera un anillo circular (arandela) con radio exterior $R(x)$ y radio interior $r(x)$.")
             st.latex(r"V = \pi \int_{a}^{b} \left( [R(x)]^2 - [r(x)]^2 \right) dx")
-            st.markdown(f"**2. Determinación de radios respecto al eje $y = {sp.latex(eje_sym)}$:**")
-            st.latex(r"R(x) = \left(" + sp.latex(sup_sym) + r"\right) - \left(" + sp.latex(eje_sym) + r"\right) = " + sp.latex(R_sym))
-            st.latex(r"r(x) = \left(" + sp.latex(inf_sym) + r"\right) - \left(" + sp.latex(eje_sym) + r"\right) = " + sp.latex(r_sym))
-            st.markdown("**3. Planteamiento y expansión algebraica:**")
-            st.latex(r"V = \int_{" + sp.latex(a_sym) + r"}^{" + sp.latex(b_sym) + r"} " + expr_sin_simp + r" \, dx = \int_{" + sp.latex(a_sym) + r"}^{" + sp.latex(b_sym) + r"} " + sp.latex(integrando_sym) + r" \, dx")
 
-        else:
-            st.markdown("**1. Fórmula General (Método de Cascarones Cilíndricos):**")
+            st.markdown("### 2. Determinación Algebraica de los Límites de Integración")
+            st.write("Hallamos los puntos de corte igualando la curva exterior $y_{\\text{sup}}(x)$ con la curva interior $y_{\\text{inf}}(x)$:")
+            st.latex(sp.latex(sup_sym) + r" = " + sp.latex(inf_sym) + r" \implies " + sp.latex(sp.Eq(sup_sym - inf_sym, 0)))
+            raices = sp.solve(sp.Eq(sup_sym, inf_sym), x)
+            if raices:
+                raices_latex = ", \; ".join([f"x = {sp.latex(r_val)}" for r_val in raices])
+                st.latex(r"\text{Puntos de intersección: } " + raices_latex)
+            st.latex(r"\text{Intervalo de integración: } x \in [" + sp.latex(a_sym) + r", " + sp.latex(b_sym) + r"]")
+
+            st.markdown(f"### 3. Cálculo de Radios Respecto al Eje $y = {sp.latex(eje_sym)}$")
+            st.write("Restamos la coordenada del eje de rotación ($c = " + sp.latex(eje_sym) + "$) a cada función frontera:")
+            st.latex(r"R(x) = y_{\text{sup}}(x) - c = \left(" + sp.latex(sup_sym) + r"\right) - \left(" + sp.latex(eje_sym) + r"\right) = " + sp.latex(R_sym))
+            st.latex(r"r(x) = y_{\text{inf}}(x) - c = \left(" + sp.latex(inf_sym) + r"\right) - \left(" + sp.latex(eje_sym) + r"\right) = " + sp.latex(r_sym))
+
+            st.markdown("### 4. Planteamiento y Expansión Polinómica del Integrando")
+            st.latex(r"V = \int_{" + sp.latex(a_sym) + r"}^{" + sp.latex(b_sym) + r"} " + expr_sin_simp + r" \, dx")
+            st.write("Desarrollamos los binomios al cuadrado y reducimos términos semejantes:")
+            st.latex(r"V = \int_{" + sp.latex(a_sym) + r"}^{" + sp.latex(b_sym) + r"} " + sp.latex(integrando_sym) + r" \, dx")
+
+        else:  # Cascarones Cilíndricos
+            st.markdown("### 1. Identificación del Método y Ventaja Analítica")
+            st.write("Al rotar alrededor del eje vertical Y ($x = 0$), tomamos rectángulos paralelos al eje de giro de radio $x$, altura $h(x) = f(x)$ y espesor $dx$. Al desplegar cada capa cilíndrica se obtiene un volumen diferencial $dV = 2\\pi x \\cdot f(x)\\,dx$:")
             st.latex(r"V = 2\pi \int_{a}^{b} x \cdot f(x) \, dx")
-            st.info("💡 **Ventaja analítica:** Al girar alrededor del eje Y, usar arandelas exigiría despejar $x = 1 \\pm \\sqrt{1-y}$ en términos de $y$. Con cascarones cilíndricos se integra directamente respecto a $x$ de forma polinómica.")
-            st.markdown("**2. Planteamiento y expansión del producto:**")
-            st.latex(r"V = \int_{" + sp.latex(a_sym) + r"}^{" + sp.latex(b_sym) + r"} " + expr_sin_simp + r" \, dx = \int_{" + sp.latex(a_sym) + r"}^{" + sp.latex(b_sym) + r"} " + sp.latex(integrando_sym) + r" \, dx")
+            st.info("💡 **¿Por qué Cascarones y no Arandelas?** Si usáramos arandelas (diferencial $dy$), tendríamos que despejar $x$ de $y = 2x - x^2$, obteniendo $x = 1 \\pm \\sqrt{1-y}$ con radicales dobles. Con cascarones cilíndricos integramos directamente respecto a $x$ mediante un polinomio simple.")
 
-        st.markdown("**4. Antiderivada y Evaluación (Teorema Fundamental del Cálculo):**")
-        val_b = antiderivada.subs(x, b_sym)
-        val_a = antiderivada.subs(x, a_sym)
-        st.latex(r"V = \left[ " + sp.latex(antiderivada) + r" \right]_{" + sp.latex(a_sym) + r"}^{" + sp.latex(b_sym) + r"}")
-        st.latex(r"V = \left( " + sp.latex(val_b) + r" \right) - \left( " + sp.latex(val_a) + r" \right) = " + sp.latex(vol_exacto) + r" \approx " + f"{vol_numerico:.6f}" + r" \text{ u}^3")
+            st.markdown("### 2. Determinación de los Límites de Integración")
+            st.write("Igualamos la función altura $f(x)$ al eje X ($y = 0$) para encontrar dónde cierra la región:")
+            st.latex(sp.latex(f_sym) + r" = 0 \implies " + sp.latex(sp.factor(f_sym)) + r" = 0")
+            raices = sp.solve(sp.Eq(f_sym, 0), x)
+            if raices:
+                raices_latex = ", \; ".join([f"x = {sp.latex(r_val)}" for r_val in raices])
+                st.latex(r"\text{Raíces obtenidas: } " + raices_latex + r" \implies x \in [" + sp.latex(a_sym) + r", " + sp.latex(b_sym) + r"]")
 
+            st.markdown("### 3. Planteamiento y Expansión Distributiva")
+            st.latex(r"V = \int_{" + sp.latex(a_sym) + r"}^{" + sp.latex(b_sym) + r"} " + expr_sin_simp + r" \, dx")
+            st.write("Aplicamos propiedad distributiva multiplicando $x$ por $f(x)$:")
+            st.latex(r"V = \int_{" + sp.latex(a_sym) + r"}^{" + sp.latex(b_sym) + r"} " + sp.latex(integrando_sym) + r" \, dx")
+
+        # Paso final común: Antiderivada y Teorema Fundamental del Cálculo
+        st.markdown("### 5. Antiderivada (Regla de la Potencia) y Evaluación")
+        st.write("Integramos término a término aplicando $\\int x^n \\, dx = \\frac{x^{n+1}}{n+1}$:")
+        st.latex(r"F(x) = \int \left(" + sp.latex(integrando_sym) + r"\right) dx = " + sp.latex(antiderivada_desglosada))
+
+        st.write("Aplicamos el **Teorema Fundamental del Cálculo** $\\left[F(x)\\right]_{a}^{b} = F(b) - F(a)$:")
+        st.latex(r"F(" + sp.latex(b_sym) + r") = " + sp.latex(val_b))
+        st.latex(r"F(" + sp.latex(a_sym) + r") = " + sp.latex(val_a))
+
+        st.success("**Resultado Final Exacto y Aproximación Decimal:**")
+        st.latex(r"V = F(" + sp.latex(b_sym) + r") - F(" + sp.latex(a_sym) + r") = \left(" + sp.latex(val_b) + r"\right) - \left(" + sp.latex(val_a) + r"\right) = " + sp.latex(vol_exacto) + r" \approx " + f"{vol_numerico:.6f}" + r" \text{ u}^3")
     # --- PESTAÑA 3: REGIÓN PLANA 2D ---
     with tab_2d:
         x_vals = np.linspace(a, b, 200)
