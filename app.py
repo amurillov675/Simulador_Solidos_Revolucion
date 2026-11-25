@@ -135,7 +135,8 @@ try:
     st.info(contexto)
     
     c1, c2, c3 = st.columns(3)
-    c1.metric("Volumen Exacto (Simbólico)", f"{sp.pretty(vol_exacto)} u³")
+   vol_str = str(vol_exacto).replace("**", "^").replace("*", "·").replace("sqrt", "√").replace("pi", "π")
+    c1.metric("Volumen Exacto (Simbólico)", f"{vol_str} u³")
     c2.metric("Aproximación Numérica (SciPy)", f"{vol_numerico:.6f} u³")
     err = abs(float(vol_exacto.evalf()) - vol_numerico)
     c3.metric("Error Absoluto (Punto Flotante)", f"{err:.2e}")
